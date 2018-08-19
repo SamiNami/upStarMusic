@@ -10,4 +10,6 @@ module.exports = _ids => {
         { _id: { $in: _ids } },
         { $set: { retired: false } }
     );
+    // other syntax
+    // return Artist.updateMany({ _id: _ids }, { retired: true });
 };
