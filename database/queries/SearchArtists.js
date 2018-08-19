@@ -1,4 +1,5 @@
 const Artist = require('../models/artist');
+const _ = require('lodash');
 
 /**
  * Searches through the Artist collection
@@ -9,11 +10,27 @@ const Artist = require('../models/artist');
  * @return {promise} A promise that resolves with the artists, count, offset, and limit
  */
 module.exports = (criteria, sortProperty, offset = 0, limit = 20) => {
-    return Artist.find({})
+    const filterArtist = Artist.find(buildQuery(criteria))
         .sort({ [sortProperty]: 1 })
         .skip(offset)
-        .limit(limit)
-        .then(artists => {
-            return { all: artists, count: artists.length, offset, limit };
-        });
+        .limit(limit);
+
+    return Promise.all([filterArtist, Artist.count()]).then(results => {
+        return { all: results[0], count: results[1], offset, limit };
+    });
 };
+
+function buildQuery(criteria) {
+    const query = {};
+    const { name, age, yearsActive } = criteria;
+    if (name) {
+        query.$text = { $search: name };
+    }
+    if (!_.isEmpty(age)) {
+        query['age'] = { $gte: age.min, $lte: age.max };
+    }
+    if (!_.isEmpty(yearsActive)) {
+        query['yearsActive'] = { $gte: yearsActive.min, $lte: yearsActive.max };
+    }
+    return query;
+}
